@@ -120,7 +120,6 @@
 (defmethod %syntax-scan-region ((tmlanguage tmlanguage) start end)
   (tm-syntax-scan-region start end))
 
-
 (defun set-syntax-context (line x)
   (setf (line:line-syntax-context line) x))
 
@@ -300,9 +299,9 @@
         (setf best (tm-get-best-result best end-result))
         (loop
           (cond ((null best)
-                 (line:line-add-property (point-line point) start1 (line:line-length (point-line point))
-                                    :attribute (tm-rule-name rule)
-                                    t)
+                 ;; (line:line-add-property (point-line point) start1 (line:line-length (point-line point))
+                 ;;                    :attribute (tm-rule-name rule)
+                 ;;                    t)
                  (tm-apply-begin-captures rule point begin-result start-line-p)
                  (tm-apply-content-name rule point start2 (line:line-length (point-line point)) t)
                  (set-syntax-context (point-line point) (cons rule begin-result))
@@ -319,6 +318,10 @@
                  (line-offset point 0 (tm-result-end end-result))
                  (return))
                 (t
+                 (tm-scan-line point
+                               (tm-region-patterns rule)
+                               start2
+                               end)
                  (line-offset point 0 (tm-result-end best))
                  (setf end-result
                        (tm-ahead-match rule

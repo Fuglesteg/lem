@@ -16,10 +16,51 @@
   #+windows (merge-pathnames "npm/node_modules/@vue/language-server/" (uiop:getenv "APPDATA"))
   "The location of the language server source code files for \"@vue/language-server\"")
 
+(defun make-tmlanguage-vue ()
+  (let ((tmlanguage (lem-xml-mode::make-tmlanguage-xml)))
+    (add-tm-pattern tmlanguage
+                    (make-tm-region
+                     "<script.*>"
+                     "</script>"
+                     :patterns (lem-js-mode::make-tm-patterns-js)))
+    (add-tm-pattern tmlanguage
+                    (make-tm-region
+                     "<style.*>"
+                     "</style>"
+                     :patterns (lem-css-mode::make-tm-css-patterns)))
+    tmlanguage))
+
+(defparameter *vue-syntax-table*
+  (let ((syntax-table (make-syntax-table
+                       :space-chars lem-js-mode::*js-spaces*
+                       :paren-pairs '((#\( . #\))
+                                      (#\{ . #\})
+                                      (#\[ . #\]))
+                       :string-quote-chars '(#\" #\' #\`)
+                       :line-comment-string "//"
+                       :block-comment-pairs '(("/*" . "*/"))))
+        (tmlanguage (make-tmlanguage-vue)))
+    (set-syntax-parser syntax-table tmlanguage)
+    syntax-table))
+
 (define-major-mode vue-mode language-mode
     (:name "Vue"
      :mode-hook *vue-mode-hook*
-     :keymap *vue-mode-keymap*
+     :syntax-table *vue-syntax-table*
+     :keymap *vue-mode-keymap*)
+  (setf (variable-value 'enable-syntax-highlight) t
+        (variable-value 'indent-tabs-mode) nil
+        (variable-value 'tab-width) 2
+        (variable-value 'calc-indent-function) 'lem-js-mode::js-calc-indent
+        (variable-value 'line-comment) "//"
+        (variable-value 'beginning-of-defun-function) 'lem-js-mode::beginning-of-defun
+        (variable-value 'end-of-defun-function) 'lem-js-mode::end-of-defun))
+
+(define-major-mode vue-mode/template lem-html-mode:html-mode
+    (:name "Vue template"))
+
+(define-major-mode vue-mode/js language-mode
+    (:name "Vue script"
      :formatter 'lem-js-mode::prettier
      :syntax-table lem-js-mode::*js-syntax-table*)
   (setf (variable-value 'enable-syntax-highlight) t
