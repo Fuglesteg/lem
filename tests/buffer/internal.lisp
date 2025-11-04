@@ -252,3 +252,24 @@ qrstuvwxyz"
 
       ;; Assertion
       (pass "No internal errors within recompute-undo-position-offset"))))
+
+(deftest tm-apply-region-supports-incomplete-sub-patterns
+  ;; Arrange
+  (let ((js-buffer (lem:make-buffer "test.js" :temporary t)))
+    (lem:with-point ((point (lem:buffer-point js-buffer) :right-inserting))
+      (lem:insert-string point "const greeting = `Hello, my name is ${user.name < Missing end pattern 0_0`;")
+      (let ((patterns (list
+                       (make-tm-region "`" "`"
+                                       :name 'syntax-string-attribute
+                                       :patterns (make-tm-patterns
+                                                  (make-tm-region
+                                                   "\\${"
+                                                   "}"
+                                                   :begin-captures #(syntax-constant-attribute)
+                                                   :end-captures #(syntax-constant-attribute)
+                                                   :patterns (apply #'make-tm-patterns
+                                                                    base-patterns)))))))
+        ;; Act
+        (tm-scan-line point patterns 0 nil)
+        ;; Assert
+        (pass "No internal errors due to tm-apply-region")))))
